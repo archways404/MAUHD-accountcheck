@@ -4,25 +4,38 @@ const puppeteer = require('puppeteer');
 
 dotenv.config();
 
-const username = process.env.USERNAME;
-const password = process.env.PASSWORD;
+const username = '';
+const password = '';
+console.log('🚀 ~ file: main.js:8 ~ username:', username);
+console.log('🚀 ~ file: main.js:9 ~ password:', password);
 
 async function schema_mau_se_Login() {
-	const login = await fetch('https://schema.mau.se/login_do.jsp', {
-		method: 'POST',
-		headers: {
-			'Content-Type': 'application/x-www-form-urlencoded',
-		},
-		body: new URLSearchParams({
-			username: username,
-			password: password,
-		}),
-	});
-	const loginText = await login.text();
-	// Using cheerio to parse HTML
-	const $ = cheerio.load(loginText);
-	const loginFailedMessage = $('.title').text();
-	console.log(loginFailedMessage);
+	try {
+		const login = await fetch('https://schema.mau.se/login_do.jsp', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/x-www-form-urlencoded',
+			},
+			body: new URLSearchParams({
+				username: username,
+				password: password,
+			}),
+		});
+		const loginText = await login.text();
+		const $ = cheerio.load(loginText);
+		const loginFailedMessage = $('.title').text();
+
+		if (loginFailedMessage) {
+			loginFailedJSON = { loginStatus: false, msg: loginFailedMessage };
+			return loginFailedJSON;
+		} else {
+			loginSuccessJSON = { loginStatus: true, msg: 'Login successful!' };
+			return loginSuccessJSON;
+		}
+	} catch (error) {
+		loginErrorJSON = { loginStatus: false, msg: error };
+		return loginErrorJSON;
+	}
 }
 
 async function mau_instructure_com_Login() {
@@ -78,6 +91,16 @@ async function mau_instructure_com_Login() {
 	await browser.close();
 }
 
-//schema_mau_se_Login();
+async function main() {
+	await is_account_active();
+	const schemaLogin = await schema_mau_se_Login();
+	if (schemaLogin.loginStatus) {
+		console.log('Schema login successful!');
+	} else {
+		console.log('Schema login failed: ', schemaLogin.msg);
+	}
 
-//mau_instructure_com_Login();
+	//await mau_instructure_com_Login();
+}
+
+main();
